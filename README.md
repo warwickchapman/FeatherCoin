@@ -6,6 +6,10 @@ Feathercoin - a lite version of Litecoin using scrypt as a proof of work scheme.
 The rest is the same as bitcoin.
  - 200 coins per block
  - 2016 blocks to retarget difficulty
+ 
+Download
+
+Windows - http://www.feathercoin.com/FeatherCoin.zip
 
 Development process
 ===================
