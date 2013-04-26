@@ -1138,15 +1138,13 @@ void MapPort()
 #endif
 
 
-/*
 // DNS seeds
 // Each pair gives a source name and a seed name.
 // The first name is used as information source for addrman.
 // The second name should resolve to a list of seed addresses.
 static const char *strDNSSeed[][2] = {
-    {"litecoinpool.org", "dnsseed.litecoinpool.org"},
-    {"bytesized-vps.com", "dnsseed.bytesized-vps.com"},
-    {"xurious.com", "dnsseed.ltc.xurious.com"},
+    {"feathercoin.com", "dnsseed.feathercoin.com"},
+    {"altcointech.net", "dnsseed.fc.altcointech.net"},
 };
 
 void ThreadDNSAddressSeed(void* parg)
@@ -1205,7 +1203,6 @@ void ThreadDNSAddressSeed2(void* parg)
 
     printf("%d addresses found from DNS seeds\n", found);
 }
-*/
 
 
 
@@ -1217,10 +1214,7 @@ void ThreadDNSAddressSeed2(void* parg)
 
 
 
-unsigned int pnSeed[] =
-{
-    0x2EFDCB71, 0xCC1B3AD6, 0xADA77149,
-};
+unsigned int pnSeed[] = {};
 
 void DumpAddresses()
 {
@@ -1822,9 +1816,9 @@ void StartNode(void* parg)
 
     if (!GetBoolArg("-dnsseed", true))
         printf("DNS seeding disabled\n");
-    // else
-        // if (!CreateThread(ThreadDNSAddressSeed, NULL))
-            // printf("Error: CreateThread(ThreadDNSAddressSeed) failed\n");
+    else
+        if (!CreateThread(ThreadDNSAddressSeed, NULL))
+            printf("Error: CreateThread(ThreadDNSAddressSeed) failed\n");
 
     // Map ports with UPnP
     if (fUseUPnP)
