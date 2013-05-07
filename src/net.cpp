@@ -1145,6 +1145,8 @@ void MapPort()
 static const char *strDNSSeed[][2] = {
     {"feathercoin.com", "dnsseed.feathercoin.com"},
     {"altcointech.net", "dnsseed.fc.altcointech.net"},
+    {"alltheco.in", "dnsseed.alltheco.in"},
+	{"btcltcftc.com", "dnsseed.btcltcftc.com"},
 };
 
 void ThreadDNSAddressSeed(void* parg)
