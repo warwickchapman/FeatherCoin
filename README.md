@@ -2,10 +2,9 @@ Feathercoin - a lite version of Litecoin using scrypt as a proof of work scheme.
  - 2.5 minute block targets
  - subsidy halves in 3360k blocks (~4 years)
  - ~336 million total coins
-
-The rest is the same as bitcoin.
  - 200 coins per block
- - 2016 blocks to retarget difficulty
+ - 504 blocks to retarget difficulty
+ - 41.4% maximum change on difficulty retarget
  
 Download
 
