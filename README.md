@@ -9,7 +9,9 @@ The rest is the same as bitcoin.
  
 Download
 
-Windows - http://www.feathercoin.com/FeatherCoin.zip
+Windows GUI - http://www.feathercoin.com/dl/FeatherCoin.zip
+Windows Daemon - http://www.feathercoin.com/dl/feathercoind.zip
+Mac OSX 10.6 or later - http://www.feathercoin.com/dl/feathercoin-mac.zip
 
 Development process
 ===================
