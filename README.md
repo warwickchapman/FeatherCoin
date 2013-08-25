@@ -8,7 +8,7 @@ Feathercoin - a lite version of Litecoin using scrypt as a proof of work scheme.
  
 Download
 
-https://github.com/FeatherCoin/Feathercoin-Clients
+https://www.feathercoin.com/
 
 Development process
 ===================
