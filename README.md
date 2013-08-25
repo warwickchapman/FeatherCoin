@@ -8,9 +8,7 @@ Feathercoin - a lite version of Litecoin using scrypt as a proof of work scheme.
  
 Download
 
-Windows GUI - http://www.feathercoin.com/dl/FeatherCoin.zip
-Windows Daemon - http://www.feathercoin.com/dl/feathercoind.zip
-Mac OSX 10.6 or later - http://www.feathercoin.com/dl/feathercoin-mac.zip
+https://github.com/FeatherCoin/Feathercoin-Clients
 
 Development process
 ===================
