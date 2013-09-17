@@ -322,11 +322,11 @@ Value GetNetworkHashPS(int lookup) {
     if (pindexBest == NULL)
         return 0;
 
-    // If lookup is -1, then use blocks since last difficulty change.
+    // If lookup is zero or negative value, then use blocks since the last retarget.
     if (lookup <= 0)
-        lookup = pindexBest->nHeight % 2016 + 1;
+        lookup = pindexBest->nHeight % 504 + 1;
 
-    // If lookup is larger than chain, then set it to chain length.
+    // If lookup is larger than block chain, then set it to the maximum allowed.
     if (lookup > pindexBest->nHeight)
         lookup = pindexBest->nHeight;
 
@@ -345,10 +345,10 @@ Value getnetworkhashps(const Array& params, bool fHelp)
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "getnetworkhashps [blocks]\n"
-            "Returns the estimated network hashes per second based on the last 120 blocks.\n"
-            "Pass in [blocks] to override # of blocks, -1 specifies since last difficulty change.");
+            "Returns estimated network hashes per second based on the last 30 blocks.\n"
+            "Pass in [blocks] to override the default value; zero specifies # of blocks since the last retarget.");
 
-    return GetNetworkHashPS(params.size() > 0 ? params[0].get_int() : 120);
+    return GetNetworkHashPS(params.size() > 0 ? atoi(params[0].get_str()) : 30);
 }
 
 
