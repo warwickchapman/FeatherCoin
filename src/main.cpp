@@ -836,8 +836,8 @@ int64 static GetBlockValue(int nHeight, int64 nFees)
     return nSubsidy + nFees;
 }
 
-static const int64 nTargetTimespan = (7 * 24 * 60 * 60) / 8; // Feathercoin: 7/8 days
-static const int64 nTargetSpacing = 2.5 * 60; // Feathercoin: 2.5 minutes
+int nTargetTimespan = 3.5 * 24 * 60 * 60; // 3.5 days
+static const int nTargetSpacing = 2.5 * 60; // 2.5 minutes
 
 //
 // minimum amount of work that could possibly be required nTime after
@@ -854,8 +854,8 @@ unsigned int ComputeMinWork(unsigned int nBase, int64 nTime)
     bnResult.SetCompact(nBase);
     while (nTime > 0 && bnResult < bnProofOfWorkLimit)
     {
-        // Maximum 141% adjustment...
-        bnResult = (bnResult * 99) / 70;
+        // Maximum 1.0905077 aka 9% adjustment...
+        bnResult = (bnResult * 494) / 453;
         // ... in best-case exactly 4-times-normal target time
         nTime -= nTargetTimespan*4;
     }
@@ -872,22 +872,32 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
     if (pindexLast == NULL)
         return nProofOfWorkLimit;
 
-    // FeatherCoin difficulty adjustment protocol switch
-    static const int nDifficultySwitchHeight = 33000;
+    // The next block
     int nHeight = pindexLast->nHeight + 1;
-    bool fNewDifficultyProtocol = (nHeight >= nDifficultySwitchHeight || fTestNet);
 
-    int64 nTargetTimespanCurrent = fNewDifficultyProtocol? nTargetTimespan : (nTargetTimespan*4);
-    int64 nInterval = nTargetTimespanCurrent / nTargetSpacing;
+    // The 1st hard fork
+    int nForkOne = 33000;
+    if(nHeight >= nForkOne)
+      nTargetTimespan = (7 * 24 * 60 * 60) / 8; // 7/8 days
 
-    // Only change once per interval, or at protocol switch height
-    if ((nHeight % nInterval != 0) &&
-        (nHeight != nDifficultySwitchHeight || fTestNet))
-    {
+    // The 2nd hard fork
+    int nForkTwo = 87948;
+    if((nHeight >= nForkTwo) || fTestNet)
+      nTargetTimespan = (7 * 24 * 60 * 60) / 32; // 7/32 days
+
+    // 2016 blocks initial, 504 after the 1st and 126 after the 2nd hard fork
+    int nInterval = nTargetTimespan / nTargetSpacing;
+
+    bool fHardFork = (nHeight == nForkOne) || (nHeight == nForkTwo);
+    if(fTestNet) fHardFork = false;
+
+    // Difficulty rules regular blocks
+    if((nHeight % nInterval != 0) && !(fHardFork)) {
+
         // Special difficulty rule for testnet:
         if (fTestNet)
         {
-            // If the new block's timestamp is more than 2* 10 minutes
+            // If the new block's timestamp is more than 2* 2.5 minutes
             // then allow mining of a min-difficulty block.
             if (pblock->nTime > pindexLast->nTime + nTargetSpacing*2)
                 return nProofOfWorkLimit;
@@ -904,40 +914,73 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
         return pindexLast->nBits;
     }
 
-    // Feathercoin: This fixes an issue where a 51% attack can change difficulty at will.
-    // Go back the full period unless it's the first retarget after genesis. Code courtesy of Art Forz
-    int blockstogoback = nInterval-1;
-    if (nHeight != nInterval)
-        blockstogoback = nInterval;
+    // The 1st retarget after genesis
+    if(nInterval >= nHeight) nInterval = nHeight - 1;
 
-    // Go back by what we want to be 7/8 days worth of blocks
+    // Go back by nInterval
     const CBlockIndex* pindexFirst = pindexLast;
-    for (int i = 0; pindexFirst && i < blockstogoback; i++)
-        pindexFirst = pindexFirst->pprev;
+    for(int i = 0; pindexFirst && i < nInterval; i++)
+      pindexFirst = pindexFirst->pprev;
     assert(pindexFirst);
 
-    // Limit adjustment step to 141% (400% before protocol switch)
-    int64 nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
-    printf("  nActualTimespan = %"PRI64d"  before bounds\n", nActualTimespan);
-    int64 nActualTimespanMax = fNewDifficultyProtocol? ((nTargetTimespanCurrent*99)/70) : (nTargetTimespanCurrent*4);
-    int64 nActualTimespanMin = fNewDifficultyProtocol? ((nTargetTimespanCurrent*70)/99) : (nTargetTimespanCurrent/4);
-    if (nActualTimespan < nActualTimespanMin)
-        nActualTimespan = nActualTimespanMin;
-    if (nActualTimespan > nActualTimespanMax)
-        nActualTimespan = nActualTimespanMax;
+    int nActualTimespan = pindexLast->GetBlockTime() - pindexFirst->GetBlockTime();
+
+    printf("RETARGET: nActualTimespan = %d before bounds\n", nActualTimespan);
+
+    // Additional averaging over 4x nInterval window
+    if((nHeight >= nForkTwo) || (fTestNet && (nHeight > 4*nInterval))) {
+        nInterval *= 4;
+
+        const CBlockIndex* pindexFirst = pindexLast;
+        for(int i = 0; pindexFirst && i < nInterval; i++)
+          pindexFirst = pindexFirst->pprev;
+
+        int nActualTimespanLong =
+          (pindexLast->GetBlockTime() - pindexFirst->GetBlockTime())/4;
+
+        // Average between short and long windows
+        int nActualTimespanAvg = (nActualTimespan + nActualTimespanLong)/2;
+
+        // Apply .25 damping
+        nActualTimespan = nActualTimespanAvg + 3*nTargetTimespan;
+        nActualTimespan /= 4;
+
+        printf("RETARGET: nActualTimespanLong = %d, nActualTimeSpanAvg = %d, nActualTimespan (damped) = %d\n",
+          nActualTimespanLong, nActualTimespanAvg, nActualTimespan);
+    }
+
+    // The initial settings (4.0 difficulty limiter)
+    int nActualTimespanMax = nTargetTimespan*4;
+    int nActualTimespanMin = nTargetTimespan/4;
+
+    // The 1st hard fork (1.4142857 aka 41% difficulty limiter)
+    if(nHeight >= nForkOne) {
+        nActualTimespanMax = nTargetTimespan*99/70;
+        nActualTimespanMin = nTargetTimespan*70/99;
+    }
+
+    // The 2nd hard fork (1.0905077 aka 9% difficulty limiter)
+    if(nHeight >= nForkTwo) {
+        nActualTimespanMax = nTargetTimespan*494/453;
+        nActualTimespanMin = nTargetTimespan*453/494;
+    }
+
+    if(nActualTimespan < nActualTimespanMin) nActualTimespan = nActualTimespanMin;
+    if(nActualTimespan > nActualTimespanMax) nActualTimespan = nActualTimespanMax;
+
+    printf("RETARGET: nActualTimespan = %d after bounds\n", nActualTimespan);
+    printf("RETARGET: nTargetTimespan = %d, nTargetTimespan/nActualTimespan = %.4f\n", nTargetTimespan, (float) nTargetTimespan/nActualTimespan);
 
     // Retarget
     CBigNum bnNew;
     bnNew.SetCompact(pindexLast->nBits);
     bnNew *= nActualTimespan;
-    bnNew /= nTargetTimespanCurrent;
+    bnNew /= nTargetTimespan;
 
     if (bnNew > bnProofOfWorkLimit)
         bnNew = bnProofOfWorkLimit;
 
-    /// debug print
     printf("GetNextWorkRequired RETARGET\n");
-    printf("nTargetTimespan = %"PRI64d"    nActualTimespan = %"PRI64d"\n", nTargetTimespanCurrent, nActualTimespan);
     printf("Before: %08x  %s\n", pindexLast->nBits, CBigNum().SetCompact(pindexLast->nBits).getuint256().ToString().c_str());
     printf("After:  %08x  %s\n", bnNew.GetCompact(), bnNew.getuint256().ToString().c_str());
 
