@@ -882,7 +882,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 
     // The 2nd hard fork
     int nForkTwo = 87948;
-    if((nHeight >= nForkTwo) || fTestNet)
+    if((nHeight >= nForkTwo) || (fTestNet && (nHeight >= 2016)))
       nTargetTimespan = (7 * 24 * 60 * 60) / 32; // 7/32 days
 
     // 2016 blocks initial, 504 after the 1st and 126 after the 2nd hard fork
