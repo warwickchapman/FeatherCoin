@@ -3,8 +3,8 @@ Feathercoin - Open Source cryptographic Internet currency
  - subsidy halves in 840k blocks (~4 years)
  - ~336 million total coins
  - 200 coins per block
- - 504 blocks to retarget difficulty
- - 41.4% maximum change on difficulty retarget
+ - 126 blocks to retarget difficulty with 504 sample and .25 damping
+ - ~9% maximum change on difficulty retarget
  
 Download
 
